@@ -108,7 +108,7 @@ def diagnostic_plots(model, df, model_name):
     std_resid = influence.resid_studentized_internal
 
     # Create a figure with 2 rows x 3 columns of subplots
-    fig, axs = plt.subplots(2, 3, figsize=(18, 12))
+    fig, axs = plt.subplots(2, 2, figsize=(18, 12))
     axs = axs.flatten()
 
     # 1. Residuals vs Fitted
@@ -136,18 +136,6 @@ def diagnostic_plots(model, df, model_name):
     axs[3].set_title('Residual Histogram')
     axs[3].set_xlabel('Residuals')
     axs[3].set_ylabel('Frequency')
-
-    # 5. Cook's Distance
-    axs[4].stem(np.arange(len(cooks_d)), cooks_d, markerfmt=",")
-    axs[4].set_title("Cook's Distance")
-    axs[4].set_xlabel('Observation')
-    axs[4].set_ylabel("Cook's D")
-
-    # 6. Leverage vs Standardized Residuals
-    axs[5].scatter(leverage, std_resid, alpha=0.7)
-    axs[5].set_title('Leverage vs Standardized Residuals')
-    axs[5].set_xlabel('Leverage')
-    axs[5].set_ylabel('Standardized Residuals')
 
     fig.suptitle(f'Diagnostic Plots for {model_name}', fontsize=16)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
