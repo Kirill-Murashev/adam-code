@@ -91,11 +91,6 @@ print(model_poor.summary())
 # ------------------------------
 # Diagnostic Plots Function
 # ------------------------------
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import statsmodels.api as sm
-
 
 def diagnostic_plots(model, df, model_name):
     # Extract fitted values and residuals
