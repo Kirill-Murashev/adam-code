@@ -86,38 +86,43 @@ print(model_poor.summary())
 if not os.path.exists('images'):
     os.makedirs('images')
 
-# Assuming that model_good is a fitted OLS model
-influence = model_good.get_influence()
-cooks_d = influence.cooks_distance[0]              # Cook's Distance for each observation
-leverage = influence.hat_matrix_diag               # Hat (leverage) values
-std_resid = influence.resid_studentized_internal   # Standardized residuals
-
+# Number of observations
 n = len(model_good.resid)
-threshold = 4 / n  # common rule-of-thumb threshold for Cook's Distance
+
+# Number of parameters (including intercept) from the design matrix X_good
+p_plus_1 = X_good.shape[1]
+
+# Threshold for high leverage
+threshold_leverage = 2 * (p_plus_1 / n)
+
+# Retrieve leverage values from model influence measures
+influence = model_good.get_influence()
+leverage = influence.hat_matrix_diag
+
+# Retrieve fitted values
+fitted_values = model_good.fittedvalues
 
 # Create a figure with 2 subplots side by side
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-# Left subplot: Stem Plot for Cook's Distance
-axes[0].stem(np.arange(n), cooks_d, basefmt=" ")  # Removed use_line_collection argument
-axes[0].axhline(y=threshold, color='red', linestyle='--',
-                label=f'Threshold (4/n = {threshold:.3f})')
-axes[0].set_title("Stem Plot of Cook's Distance")
+# Left subplot: Scatter Plot of Leverage vs. Observation Index
+axes[0].scatter(np.arange(n), leverage, color='blue', alpha=0.7)
+axes[0].axhline(y=threshold_leverage, color='red', linestyle='--',
+                label=f'Threshold: {threshold_leverage:.3f}')
 axes[0].set_xlabel("Observation Index")
-axes[0].set_ylabel("Cook's Distance")
+axes[0].set_ylabel("Leverage (Hat Values)")
+axes[0].set_title("Scatter Plot: Leverage vs. Observation Index")
 axes[0].legend()
 
-# Right subplot: Bubble Scatter Plot (Leverage vs. Standardized Residuals)
-# Scale bubble sizes for visualization (adjust scaling factor as needed)
-bubble_sizes = cooks_d * 1000
-scatter = axes[1].scatter(leverage, std_resid, s=bubble_sizes,
-                          c=cooks_d, cmap='viridis', alpha=0.7)
-axes[1].set_title("Bubble Plot: Leverage vs. Standardized Residuals")
-axes[1].set_xlabel("Leverage (Hat Values)")
-axes[1].set_ylabel("Standardized Residuals")
-cbar = fig.colorbar(scatter, ax=axes[1])
-cbar.set_label("Cook's Distance")
+# Right subplot: Leverage vs. Fitted Values Plot
+axes[1].scatter(fitted_values, leverage, color='green', alpha=0.7)
+axes[1].axhline(y=threshold_leverage, color='red', linestyle='--',
+                label=f'Threshold: {threshold_leverage:.3f}')
+axes[1].set_xlabel("Fitted Values")
+axes[1].set_ylabel("Leverage (Hat Values)")
+axes[1].set_title("Leverage vs. Fitted Values")
+axes[1].legend()
 
 fig.tight_layout()
-fig.savefig("images/Cooks_Distance_Visualizations.png")
+fig.savefig("images/Leverage_Visualizations.png")
 plt.show()

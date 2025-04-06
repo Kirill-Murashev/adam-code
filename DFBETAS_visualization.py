@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import os
+import seaborn as sns
 
 # For reproducibility
 np.random.seed(0)
@@ -86,38 +87,47 @@ print(model_poor.summary())
 if not os.path.exists('images'):
     os.makedirs('images')
 
-# Assuming that model_good is a fitted OLS model
+# Get influence measures from the fitted model
 influence = model_good.get_influence()
-cooks_d = influence.cooks_distance[0]              # Cook's Distance for each observation
-leverage = influence.hat_matrix_diag               # Hat (leverage) values
-std_resid = influence.resid_studentized_internal   # Standardized residuals
+dfbetas = influence.dfbetas  # Array shape: (n, p) where p includes the intercept
 
+# Set threshold for DFBETAS: 2/sqrt(n)
 n = len(model_good.resid)
-threshold = 4 / n  # common rule-of-thumb threshold for Cook's Distance
+threshold = 2 / np.sqrt(n)
 
-# Create a figure with 2 subplots side by side
-fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+# 1) Multi-panel Stem Plots for DFBETAS
+# Number of predictors (including intercept)
+p = dfbetas.shape[1]
 
-# Left subplot: Stem Plot for Cook's Distance
-axes[0].stem(np.arange(n), cooks_d, basefmt=" ")  # Removed use_line_collection argument
-axes[0].axhline(y=threshold, color='red', linestyle='--',
-                label=f'Threshold (4/n = {threshold:.3f})')
-axes[0].set_title("Stem Plot of Cook's Distance")
-axes[0].set_xlabel("Observation Index")
-axes[0].set_ylabel("Cook's Distance")
-axes[0].legend()
+# Create a subplot for each predictor
+fig, axes = plt.subplots(p, 1, figsize=(10, 2 * p), sharex=True)
+if p == 1:
+    axes = [axes]  # Ensure axes is iterable
 
-# Right subplot: Bubble Scatter Plot (Leverage vs. Standardized Residuals)
-# Scale bubble sizes for visualization (adjust scaling factor as needed)
-bubble_sizes = cooks_d * 1000
-scatter = axes[1].scatter(leverage, std_resid, s=bubble_sizes,
-                          c=cooks_d, cmap='viridis', alpha=0.7)
-axes[1].set_title("Bubble Plot: Leverage vs. Standardized Residuals")
-axes[1].set_xlabel("Leverage (Hat Values)")
-axes[1].set_ylabel("Standardized Residuals")
-cbar = fig.colorbar(scatter, ax=axes[1])
-cbar.set_label("Cook's Distance")
+# Plot stem plots for each predictor's DFBETAS
+for j in range(p):
+    axes[j].stem(np.arange(n), dfbetas[:, j], basefmt=" ")
+    # Draw threshold lines
+    axes[j].axhline(y=threshold, color='red', linestyle='--', label=f'+{threshold:.3f}')
+    axes[j].axhline(y=-threshold, color='red', linestyle='--', label=f'-{threshold:.3f}')
+    # Optionally, label the predictor
+    axes[j].set_ylabel(f'{X_good.columns[j]}')
+    axes[j].legend(loc='upper right')
+axes[-1].set_xlabel("Observation Index")
+fig.suptitle("DFBETAS Stem Plots for Each Predictor", fontsize=14)
+fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+fig.savefig("images/DFBETAS_StemPlots.png")
+plt.close(fig)
 
-fig.tight_layout()
-fig.savefig("images/Cooks_Distance_Visualizations.png")
+# 2) Heatmap for DFBETAS
+# Create a DataFrame with predictor names as columns
+dfbetas_df = pd.DataFrame(dfbetas, columns=X_good.columns)
+plt.figure(figsize=(10, 8))
+# Transpose so that predictors are on the y-axis and observations on the x-axis
+heatmap = sns.heatmap(dfbetas_df.T, cmap='viridis', cbar_kws={'label': 'DFBETAS'})
+plt.title("Heatmap of DFBETAS (Observations vs. Predictors)")
+plt.xlabel("Observation Index")
+plt.ylabel("Predictors")
+plt.tight_layout()
+plt.savefig("images/DFBETAS_Heatmap.png")
 plt.show()
