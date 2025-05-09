@@ -21,8 +21,8 @@ df['log_crop_yield']        = np.log(df['crop_yield'])
 
 predictors = [
     'log_area','log_distance_capital','log_distance_elevator','log_crop_yield',
-    'access','coast_line','ownership','simple_shape','is_marked',
-    'is_ab','is_cd','is_north_forest_steppe','is_south_forest_steppe','is_steppe'
+    'access', 'ownership','simple_shape','is_marked', 'is_north_forest_steppe',
+    'is_south_forest_steppe','is_steppe', 'coast_line', 'is_ab', 'is_cd'
 ]
 X = df[predictors]
 y = df['log_price']
@@ -35,21 +35,24 @@ X_scaled_df = pd.DataFrame(X_scaled, columns=predictors)
 # 4) Fit equivalent sklearn linear model
 lr = LinearRegression()
 lr.fit(X_scaled, y)
+R2 = lr.score(X_scaled, y)
 
 # 5) Compute SHAP values - using the recommended masker approach
 masker = shap.maskers.Independent(X_scaled)
 explainer = shap.LinearExplainer(lr, masker)
 shap_values = explainer.shap_values(X_scaled)
 
-# 6) Compute mean absolute Shapley values
+# 6) Compute metrics
 mean_abs_shap = np.abs(shap_values).mean(axis=0)
 importance_df = pd.DataFrame({
     'feature': predictors,
     'mean_abs_shap': mean_abs_shap
 }).sort_values('mean_abs_shap', ascending=False)
+importance_df['pct_importance'] = importance_df['mean_abs_shap'] / importance_df['mean_abs_shap'].sum()
+importance_df['explained_variance_share'] = importance_df['pct_importance'] * R2
 
 # 7) Save metrics to CSV
-importance_df.to_csv('primary_models/shap_importance.csv', index=False)
+importance_df.to_csv('primary_models/shap_importance_l1.csv', index=False)
 
 # 8) Plot and save bar chart
 plt.figure(figsize=(8,6))
