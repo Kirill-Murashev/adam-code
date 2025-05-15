@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from primary_models import regression_diagnostics
 
-# 1. Load Level II data
-df_level1 = pd.read_csv('data/data_level_2.csv')
+# 1. Load Level IV data
+df_level1 = pd.read_csv('data/data_level_4.csv')
 
 # 2. Create log‑transformed columns for the multiplicative model
 df_level1['log_price']            = np.log(df_level1['price_per_sqm'])
@@ -16,15 +16,14 @@ df_level1['log_crop_yield']       = np.log(df_level1['crop_yield'])
 formula = (
     "log_price ~ "
     "log_area + log_distance_capital + log_distance_elevator + log_crop_yield + "
-    "access + ownership + simple_shape + is_marked + "
-    "is_north_forest_steppe + is_south_forest_steppe + is_steppe"
+    "ownership + simple_shape "
 )
 
 # 4. Run diagnostics
 metrics_df, influence_df = regression_diagnostics(
     df=df_level1,
     formula=formula,
-    out_prefix="level2"
+    out_prefix="level4"
 )
 
 # 5. (Optional) inspect key metrics in the console
