@@ -7,10 +7,10 @@ from sklearn.model_selection import train_test_split
 import os
 
 # Ensure output directory exists
-os.makedirs('mc_cv_l1', exist_ok=True)
+os.makedirs('mc_cv_l4', exist_ok=True)
 
 # Load and prepare data
-df = pd.read_csv('data/data_level_1.csv')
+df = pd.read_csv('data/data_level_4.csv')
 df['log_price'] = np.log(df['price_per_sqm'])
 df['log_area'] = np.log(df['area'])
 df['log_distance_capital'] = np.log(df['distance_capital'])
@@ -20,13 +20,12 @@ df['log_crop_yield'] = np.log(df['crop_yield'])
 formula = (
     "log_price ~ "
     "log_area + log_distance_capital + log_distance_elevator + log_crop_yield + "
-    "access + coast_line + ownership + simple_shape + is_marked + "
-    "is_ab + is_cd + is_north_forest_steppe + is_south_forest_steppe + is_steppe"
+    "ownership + simple_shape "
 )
 
 # Monte Carlo CV settings
 n_splits = 10000
-test_size = 0.3
+test_size = 0.2
 rng = np.random.RandomState(0)
 
 metrics_train = []
@@ -60,7 +59,7 @@ df_test = pd.DataFrame(metrics_test)
 # Summary statistics
 summary = pd.concat([df_train.describe(percentiles=[.1, .9]).add_prefix('train_'),
                      df_test.describe(percentiles=[.1, .9]).add_prefix('test_')], axis=1)
-summary.to_csv('mc_cv_l1/summary_metrics.csv')
+summary.to_csv('mc_cv_l4/summary_metrics.csv')
 
 # Boxplots
 fig, axes = plt.subplots(2, 2, figsize=(12, 10))
@@ -69,7 +68,7 @@ for ax, metric in zip(axes.flatten(), ['R2', 'RMSE', 'MAE', 'MSE']):
     ax.boxplot([data['Train'], data['Test']], tick_labels=['Train', 'Test'])
     ax.set_title(f'Boxplot of {metric} (Train vs Test)')
 fig.tight_layout()
-plt.savefig('mc_cv_l1/boxplots_metrics.png')
+plt.savefig('mc_cv_l4/boxplots_metrics.png')
 plt.close(fig)
 
 # Density plots
@@ -80,7 +79,7 @@ for ax, metric in zip(axes.flatten(), ['R2', 'RMSE', 'MAE', 'MSE']):
     ax.set_title(f'Density of {metric}')
     ax.legend()
 fig.tight_layout()
-plt.savefig('mc_cv_l1/density_metrics.png')
+plt.savefig('mc_cv_l4/density_metrics.png')
 plt.close(fig)
 
 # Scatter train vs test R2
@@ -94,10 +93,10 @@ plt.ylabel('Test R²')
 plt.title('Train vs Test R² per Split')
 plt.legend()
 plt.tight_layout()
-plt.savefig('mc_cv_l1/scatter_r2.png')
+plt.savefig('mc_cv_l4/scatter_r2.png')
 plt.close()
 
 # Save metrics data
-df_train.to_csv('mc_cv_l1/train_metrics.csv', index=False)
-df_test.to_csv('mc_cv_l1/test_metrics.csv', index=False)
+df_train.to_csv('mc_cv_l4/train_metrics.csv', index=False)
+df_test.to_csv('mc_cv_l4/test_metrics.csv', index=False)
 summary
